@@ -1,0 +1,47 @@
+version: '2'
+services:
+
+  db:
+    image: mariadb:10.1
+    container_name: ticket_mariadb
+    restart: always
+    volumes:
+      - ./mysql/initdb/:/docker-entrypoint-initdb.d
+      - ./mysql/data/:/var/lib/mysql
+      - ./mysql/conf/custom.cnf:/etc/mysql/conf.d/custom.cnf
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=ticket_db
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=123456
+    ports:
+      - 3306:3306
+
+  php:
+    build: ./
+    container_name: ticket_php-fpm
+    restart: always
+    volumes:
+      - ./www/:/var/www/html
+      - ./nginx/www.ini:/usr/local/etc/php/conf.d/www.ini:ro
+    expose:
+      - "9000"
+
+  nginx:
+    image: nginx:alpine
+    container_name: ticket_nginx
+    restart: always
+    volumes:
+      - ./nginx/conf/nginx.conf:/etc/nginx/conf/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    volumes_from:
+      - php
+    ports:
+      - 80:80
+      
+  pma:
+      image: phpmyadmin/phpmyadmin
+      container_name: ticket_phpmyadmin
+      restart: always
+      ports:
+        - "8000:80"
